@@ -27,6 +27,45 @@ class GameSprite(pygame.sprite.Sprite):
     def show(self):
         window.blit(self.image, self.rect)
 
+map_1 = [
+    "   0000          000               ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "           0000                    ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   ",
+    "                                   "
+]
+
+'''
+0 - platform
+'''
+platforms = pygame.sprite.Group()
+
+def create_level(lvl):
+    platforms.empty()
+
+    for row in range(len(lvl)):
+        for col in range(len(lvl[row])):
+            if lvl[row][col] == "0":
+                obj = GameSprite(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\ground 1.png")
+                platforms.add(obj)
+
+create_level(map_1)
+
 
 player = GameSprite(400, 500, BLOCK, BLOCK, r"images\I 1.png")
 
@@ -40,6 +79,7 @@ while game:
     if level == 1:
         window.fill(BG)
 
+        platforms.draw(window)
         player.show()
 
     clock.tick(FPS)
