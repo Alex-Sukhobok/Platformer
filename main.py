@@ -105,21 +105,24 @@ map_1 = [
     "                                   ",
     "                          000      ",
     "                                   ",
-    "     0                             ",
+    "     0 22                          ",
     "00000000000000000000000000000000000"
 ]
 
 '''
 0 - platform
 1 - player
+2 - lava
 '''
 platforms = pygame.sprite.Group()
 player = pygame.sprite.Group()
 blocks = pygame.sprite.Group()
+lava = pygame.sprite.Group()
 
 def create_level(lvl):
     platforms.empty()
     player.empty()
+    lava.empty()
     
     for row in range(len(lvl)):
         for col in range(len(lvl[row])):
@@ -131,6 +134,10 @@ def create_level(lvl):
             elif lvl[row][col] == "1":
                 obj = Player(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\I 1.png")
                 player.add(obj)
+
+            elif lvl[row][col] == "2":
+                obj = GameSprite(col*BLOCK, row*BLOCK+5, BLOCK, BLOCK-5, r"images\lava.png")
+                lava.add(obj)
 
 create_level(map_1)
 
@@ -148,6 +155,7 @@ while game:
 
         platforms.draw(window)
         player.draw(window)
+        lava.draw(window)
 
         player.update()
 
