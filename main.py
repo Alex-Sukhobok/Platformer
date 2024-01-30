@@ -30,9 +30,61 @@ class GameSprite(pygame.sprite.Sprite):
 class Player(GameSprite):
     def __init__(self, x, y, width, height, picture):
         super().__init__(x, y, width, height, picture)
+        self.gravity = 0
+        self.jumped = False
+        self.groung = False
+
 
     def update(self):
-        pass 
+        dx, dy = 0, 0
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_d] and self.rect.right < WIN_WIDTH:
+            dx += 5
+        if keys[pygame.K_a] and self.rect.left > 0:
+            dx -= 5
+        if keys[pygame.K_SPACE] and not self.jumped and self.groung:
+            self.gravity = -12
+            self.jumped = True
+        if not keys[pygame.K_SPACE]:
+            self.jumped = False
+
+        self.gravity += 1
+        if self.gravity > 10:
+            self.gravity = 10
+        dy += self.gravity
+
+        self.rect.x += dx
+
+        collide = pygame.sprite.spritecollide(self, blocks, False)
+        if dx < 0:
+            for obj in collide:
+                self.rect.left = max(self.rect.left, obj.rect.right)
+        elif dx > 0:
+            for obj in collide:
+                self.rect.right = min(self.rect.right, obj.rect.left)
+
+        self.rect.y += dy
+        
+        self.groung = False
+
+        collide = pygame.sprite.spritecollide(self, blocks, False)
+        if dy < 0:
+            for obj in collide:
+                self.rect.top = max(self.rect.top, obj.rect.bottom)
+                self.gravity = 0
+        elif dy > 0:
+            for obj in collide:
+                self.rect.bottom = min(self.rect.bottom, obj.rect.top)
+                self.groung = True
+
+        if self.rect.top <= 0:
+            self.gravity = 0
+    
+        
+
+
+
 
 map_1 = [
     "   0000     1     000              ",
@@ -51,10 +103,10 @@ map_1 = [
     "                                   ",
     "                                   ",
     "                                   ",
+    "                          000      ",
     "                                   ",
-    "                                   ",
-    "                                   ",
-    "                                   "
+    "     0                             ",
+    "00000000000000000000000000000000000"
 ]
 
 '''
@@ -63,6 +115,7 @@ map_1 = [
 '''
 platforms = pygame.sprite.Group()
 player = pygame.sprite.Group()
+blocks = pygame.sprite.Group()
 
 def create_level(lvl):
     platforms.empty()
@@ -73,6 +126,7 @@ def create_level(lvl):
             if lvl[row][col] == "0":
                 obj = GameSprite(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\ground 1.png")
                 platforms.add(obj)
+                blocks.add(obj)
 
             elif lvl[row][col] == "1":
                 obj = Player(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\I 1.png")
