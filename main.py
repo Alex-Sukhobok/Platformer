@@ -1,3 +1,4 @@
+from typing import Any
 import pygame
 import os
 pygame.init()
@@ -25,6 +26,27 @@ class GameSprite(pygame.sprite.Sprite):
 
     def show(self):
         window.blit(self.image, self.rect)
+
+class LeftRight(GameSprite):
+    def __init__(self, x, y, width, height, picture, size_move):
+        super().__init__(x, y, width, height, picture)
+        self.direction = "right"
+        self.min_co = self.rect.left - BLOCK * size_move
+        self.max_co = self.rect.right + BLOCK * size_move
+
+    
+    def update(self):
+        if self.direction == "right":
+            self.rect.x += 1
+
+        elif self.direction == "left":
+            self.rect.x -= 1
+
+        if self.rect.right >= self.max_co:
+            self.direction = "left"
+
+        if self.rect.left <= self.min_co:
+            self.direction = "right"
 
 class Flag(GameSprite):
     def __init__ (self, x, y, width, height, picture):
@@ -88,16 +110,24 @@ class Player(GameSprite):
         self.rect.y += dy
         
         self.groung = False
+        move_check = True
 
         collide = pygame.sprite.spritecollide(self, blocks, False)
         if dy < 0:
             for obj in collide:
                 self.rect.top = max(self.rect.top, obj.rect.bottom)
                 self.gravity = 0
-        elif dy > 0:
+        elif dy >= 0:
             for obj in collide:
                 self.rect.bottom = min(self.rect.bottom, obj.rect.top)
                 self.groung = True
+
+                if LR_platforms.has(obj) and move_check:
+                    if obj.direction == "left":
+                        self.rect.x -= 1
+                    elif obj.direction == "right":
+                        self.rect.x += 1
+                    move_check = False
 
         if self.rect.top <= 0:
             self.gravity = 0
@@ -118,7 +148,7 @@ map_1 = [
     "                                   ",
     "                                   ",
     "                                   ",
-    "                                   ",
+    "      666              777         ",
     "                                   ",
     "                                   ",
     "                                   ",
@@ -137,6 +167,8 @@ map_1 = [
 3 - spikes
 4 - stars
 5 - flag
+6 - LR one point
+7 - LR two point
 '''
 platforms = pygame.sprite.Group()
 player = pygame.sprite.Group()
@@ -145,6 +177,9 @@ lava = pygame.sprite.Group()
 spikes = pygame.sprite.Group()
 stars = pygame.sprite.Group()
 flags = pygame.sprite.Group()
+LR_platforms = pygame.sprite.Group()
+UD_platforms = pygame.sprite.Group()
+
 
 def create_level(lvl):
     platforms.empty()
@@ -153,6 +188,9 @@ def create_level(lvl):
     spikes.empty()
     stars.empty()
     flags.empty()
+    LR_platforms.empty()
+    UD_platforms.empty()
+
     
     for row in range(len(lvl)):
         for col in range(len(lvl[row])):
@@ -181,6 +219,17 @@ def create_level(lvl):
                 obj = Flag(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\flag.png")
                 flags.add(obj)
 
+            elif lvl[row][col] == "6":
+                obj = LeftRight(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\ground 3.png", 1)
+                LR_platforms.add(obj)
+                blocks.add(obj)
+
+            elif lvl[row][col] == "7":
+                obj = LeftRight(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\move_platform.png", 2)
+                LR_platforms.add(obj)
+                blocks.add(obj)
+
+
 
 create_level(map_1)
 
@@ -202,9 +251,13 @@ while game:
         spikes.draw(window)
         stars.draw(window)
         flags.draw(window)
+        LR_platforms.draw(window)
+        UD_platforms.draw(window)
 
         player.update()
         flags.update()
+        LR_platforms.update()
+        UD_platforms.update()
 
     clock.tick(FPS)
     pygame.display.update()
