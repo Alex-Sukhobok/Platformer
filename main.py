@@ -26,6 +26,27 @@ class GameSprite(pygame.sprite.Sprite):
     def show(self):
         window.blit(self.image, self.rect)
 
+class Flag(GameSprite):
+    def __init__ (self, x, y, width, height, picture):
+        super().__init__(x, y, width, height, picture)
+        self.image2 = pygame.image.load(file_path(r"images\flag2.png"))
+        self.image2 = pygame.transform.scale(self.image2, (width, height))
+        self.timer = 15
+        self.images = [self.image, self.image2]
+        self.pic_num = 0
+        
+    def update(self):
+        self.timer -= 1
+        if self.timer == 0:
+            self.timer = 15
+
+            self.pic_num += 1
+            if self.pic_num == len(self.images):
+                self.pic_num = 0
+            self.image = self.images[self.pic_num]
+
+
+
 
 class Player(GameSprite):
     def __init__(self, x, y, width, height, picture):
@@ -102,10 +123,10 @@ map_1 = [
     "                                   ",
     "                                   ",
     "                                   ",
-    "                                   ",
+    "                            5      ",
     "                          000      ",
     "                                   ",
-    "     0 22                          ",
+    "     0 22             33         4 ",
     "00000000000000000000000000000000000"
 ]
 
@@ -113,16 +134,25 @@ map_1 = [
 0 - platform
 1 - player
 2 - lava
+3 - spikes
+4 - stars
+5 - flag
 '''
 platforms = pygame.sprite.Group()
 player = pygame.sprite.Group()
 blocks = pygame.sprite.Group()
 lava = pygame.sprite.Group()
+spikes = pygame.sprite.Group()
+stars = pygame.sprite.Group()
+flags = pygame.sprite.Group()
 
 def create_level(lvl):
     platforms.empty()
     player.empty()
     lava.empty()
+    spikes.empty()
+    stars.empty()
+    flags.empty()
     
     for row in range(len(lvl)):
         for col in range(len(lvl[row])):
@@ -138,6 +168,19 @@ def create_level(lvl):
             elif lvl[row][col] == "2":
                 obj = GameSprite(col*BLOCK, row*BLOCK+5, BLOCK, BLOCK-5, r"images\lava.png")
                 lava.add(obj)
+
+            elif lvl[row][col] == "3":
+                obj = GameSprite(col*BLOCK, row*BLOCK+5, BLOCK, BLOCK-5, r"images\spikes.png")
+                spikes.add(obj)
+
+            elif lvl[row][col] == "4":
+                obj = GameSprite(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\star.png")
+                stars.add(obj)
+
+            elif lvl[row][col] == "5":
+                obj = Flag(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\flag.png")
+                flags.add(obj)
+
 
 create_level(map_1)
 
@@ -156,8 +199,12 @@ while game:
         platforms.draw(window)
         player.draw(window)
         lava.draw(window)
+        spikes.draw(window)
+        stars.draw(window)
+        flags.draw(window)
 
         player.update()
+        flags.update()
 
     clock.tick(FPS)
     pygame.display.update()
