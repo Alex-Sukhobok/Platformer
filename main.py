@@ -122,6 +122,67 @@ class Fly(LeftRight):
             self.image = self.images_l[self.pic_num]
         
 
+class Lava(GameSprite):
+    def __init__(self, x, y, width, height, picture):
+        super().__init__(x, y, width, height, picture)
+        self.index = 0
+        self.timer = 15
+        self.image2 = pygame.transform.flip(self.image, True, False)
+        self.images = [self.image, self.image2]
+
+    def update(self):
+        self.timer -= 1
+        if self.timer == 0:
+            self.image = self.images[self.index]
+            self.index += 1
+            if self.index > 1:
+                self.index = 0
+            self.timer = 15
+
+class Spikes(GameSprite):
+    def __init__(self, x, y, width, height, picture):
+        super().__init__(x, y, width, height, picture)
+        self.index = 0
+        self.timer = 90
+        self.rect2 = pygame.Rect(x, int(y+2/3*height), width, int(height-1/3*height))
+        self.image2 = pygame.transform.scale(self.image, (self.rect2.width, self.rect2.height))
+        self.rects = [self.rect, self.rect2]
+        self.images = [self.image, self.image2]
+
+    def update(self):
+        self.timer -= 1
+        if self.timer == 0:
+            self.image = self.images[self.index]
+            self.rect = self.rects[self.index]
+            self.index += 1
+            if self.index == 2:
+                self.index = 0
+            self.timer = 90
+
+
+class Trumpline(GameSprite):
+    def __init__(self, x, y, width, height, picture):
+        super().__init__(x, y, width, height, picture)
+        self.image1 = self.image   
+        self.image2 = pygame.image.load(file_path(r"images\jump 2.png"))
+        self.image2 = pygame.transform.scale(self.image2, (width, height))
+        self.active = False
+        self.timer = 50
+
+
+    def activate_tr(self):
+        self.active = True
+        self.image = self.image2
+
+    def update(self):
+        if self.active:
+            self.timer -= 1
+            if self.timer == 0:
+                self.image = self.image1
+                self.active = False
+                self.timer = 50
+
+
 class Player(GameSprite):
     def __init__(self, x, y, width, height, picture):
         super().__init__(x, y, width, height, picture)
@@ -198,25 +259,25 @@ class Player(GameSprite):
 
 
 map_1 = [
-    "   0000     1     000              ",
-    "                                   ",
-    "       q                    q      ",
-    "                                   ",
-    "           0000                    ",
+    "                  1                ",
     "                                   ",
     "                                   ",
-    "   99                88            ",
-    "                                   ",
-    "                        e          ",
-    "      666              777         ",
+    "             q                     ",
+    "        00000000                   ",
     "                                   ",
     "                                   ",
-    "                           e       ",
+    "   99                              ",
     "                                   ",
-    "                            5      ",
-    "                          000      ",
+    "             2                     ",
+    "       666   0000                  ",
+    "                      777          ",
     "                                   ",
-    "     0 22             33         4 ",
+    "                               888 ",
+    "                                   ",
+    "                            4      ",
+    "                        t 000      ",
+    "        777            666         ",
+    "     02222222000     t33        q  ",
     "00000000000000000000000000000000000"
 ]
 
@@ -233,6 +294,7 @@ map_1 = [
 9 - UD two point
 q - enemy LR one point
 r - enemy LR two point
+t - trampline
 '''
 platforms = pygame.sprite.Group()
 player = pygame.sprite.Group()
@@ -244,6 +306,7 @@ flags = pygame.sprite.Group()
 LR_platforms = pygame.sprite.Group()
 UD_platforms = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
+tramplines = pygame.sprite.Group()
 
 
 def create_level(lvl):
@@ -256,6 +319,7 @@ def create_level(lvl):
     LR_platforms.empty()
     UD_platforms.empty()
     enemies.empty()
+    tramplines.empty()
 
     
     for row in range(len(lvl)):
@@ -270,11 +334,11 @@ def create_level(lvl):
                 player.add(obj)
 
             elif lvl[row][col] == "2":
-                obj = GameSprite(col*BLOCK, row*BLOCK+5, BLOCK, BLOCK-5, r"images\lava.png")
+                obj = Lava(col*BLOCK, row*BLOCK+5, BLOCK, BLOCK-5, r"images\lava.png")
                 lava.add(obj)
 
             elif lvl[row][col] == "3":
-                obj = GameSprite(col*BLOCK, row*BLOCK+5, BLOCK, BLOCK-5, r"images\spikes.png")
+                obj = Spikes(col*BLOCK, row*BLOCK+5, BLOCK, BLOCK-5, r"images\spikes.png")
                 spikes.add(obj)
 
             elif lvl[row][col] == "4":
@@ -313,6 +377,10 @@ def create_level(lvl):
                 obj = Fly(col*BLOCK, row*BLOCK+BLOCK//2, BLOCK, BLOCK//2, r"images\enemy_1.png", 2)
                 enemies.add(obj)
 
+            elif lvl[row][col] == "t":
+                obj = Trumpline(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\jump 1.png")
+                tramplines.add(obj)
+
 
 create_level(map_1)
 
@@ -337,12 +405,23 @@ while game:
         LR_platforms.draw(window)
         UD_platforms.draw(window)
         enemies.draw(window)
+        tramplines.draw(window)
 
         player.update()
         flags.update()
         LR_platforms.update()
         UD_platforms.update()
         enemies.update()
+        lava.update()
+        spikes.update()
+        tramplines.update()
+
+        pl_tr = pygame.sprite.groupcollide(player, tramplines, False, False)
+        if pl_tr:
+            for pl in pl_tr:
+                pl.gravity = -20
+                pl.jumped = True
+                pl_tr[pl][0].activate_tr()
 
     clock.tick(FPS)
     pygame.display.update()
