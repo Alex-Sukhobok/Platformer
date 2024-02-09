@@ -48,6 +48,29 @@ class LeftRight(GameSprite):
         if self.rect.left <= self.min_co:
             self.direction = "right"
 
+
+class UpDown(GameSprite):
+    def __init__(self, x, y, width, height, picture, size_move):
+        super().__init__(x, y, width, height, picture)
+        self.direction = "up"
+        self.min_co = self.rect.top - BLOCK * size_move
+        self.max_co = self.rect.bottom + BLOCK * size_move
+
+    def update(self):
+        if self.direction == "up":
+            self.rect.y -= 1
+
+        elif self.direction == "down":
+            self.rect.y += 1
+
+        if self.rect.bottom >= self.max_co:
+            self.direction = "up"
+
+        if self.rect.top <= self.min_co:
+            self.direction = "down"
+
+
+
 class Flag(GameSprite):
     def __init__ (self, x, y, width, height, picture):
         super().__init__(x, y, width, height, picture)
@@ -67,8 +90,37 @@ class Flag(GameSprite):
                 self.pic_num = 0
             self.image = self.images[self.pic_num]
 
+class Fly(LeftRight):
+    def __init__(self, x, y, width, height, picture, size_move):
+        super().__init__(x, y, width, height, picture, size_move)
+        image_l1 = pygame.image.load(file_path(r"images\enemy_1.png"))
+        image_l1 = pygame.transform.scale(image_l1, (width, height))
+        image_l2 = pygame.image.load(file_path(r"images\enemy_2.png"))
+        image_l2 = pygame.transform.scale(image_l2, (width, height))
+        self.images_l = [image_l1, image_l2]
 
+        image_r1  = pygame.transform.flip(image_l1, True, False)
+        image_r2  = pygame.transform.flip(image_l2, True, False)
+        self.images_r = [image_r1, image_r2]
 
+        self.timer = 10
+        self.pic_num = 0
+
+    def update(self):
+        super().update()
+
+        self.timer -= 1
+        if self.timer == 0:
+            self.timer = 10
+            self.pic_num += 1
+            if self.pic_num == len(self.images_r):
+                self.pic_num = 0
+
+        if self.direction == "right":
+            self.image = self.images_r[self.pic_num]
+        else:
+            self.image = self.images_l[self.pic_num]
+        
 
 class Player(GameSprite):
     def __init__(self, x, y, width, height, picture):
@@ -129,6 +181,14 @@ class Player(GameSprite):
                         self.rect.x += 1
                     move_check = False
 
+                elif UD_platforms.has(obj) and move_check:
+                    if obj.direction == "up":
+                        self.rect.y -= 1
+                    move_check = False
+
+        
+        
+
         if self.rect.top <= 0:
             self.gravity = 0
     
@@ -140,18 +200,18 @@ class Player(GameSprite):
 map_1 = [
     "   0000     1     000              ",
     "                                   ",
-    "                                   ",
+    "       q                    q      ",
     "                                   ",
     "           0000                    ",
     "                                   ",
     "                                   ",
+    "   99                88            ",
     "                                   ",
-    "                                   ",
-    "                                   ",
+    "                        e          ",
     "      666              777         ",
     "                                   ",
     "                                   ",
-    "                                   ",
+    "                           e       ",
     "                                   ",
     "                            5      ",
     "                          000      ",
@@ -169,6 +229,10 @@ map_1 = [
 5 - flag
 6 - LR one point
 7 - LR two point
+8 - UD one point
+9 - UD two point
+q - enemy LR one point
+r - enemy LR two point
 '''
 platforms = pygame.sprite.Group()
 player = pygame.sprite.Group()
@@ -179,6 +243,7 @@ stars = pygame.sprite.Group()
 flags = pygame.sprite.Group()
 LR_platforms = pygame.sprite.Group()
 UD_platforms = pygame.sprite.Group()
+enemies = pygame.sprite.Group()
 
 
 def create_level(lvl):
@@ -190,6 +255,7 @@ def create_level(lvl):
     flags.empty()
     LR_platforms.empty()
     UD_platforms.empty()
+    enemies.empty()
 
     
     for row in range(len(lvl)):
@@ -229,6 +295,23 @@ def create_level(lvl):
                 LR_platforms.add(obj)
                 blocks.add(obj)
 
+            elif lvl[row][col] == "8":
+                obj = UpDown(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\vmove_platform.png", 1)
+                UD_platforms.add(obj)
+                blocks.add(obj)
+
+            elif lvl[row][col] == "9":
+                obj = UpDown(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\vmove2_pltfr.png", 2)
+                UD_platforms.add(obj)
+                blocks.add(obj)
+
+            elif lvl[row][col] == "q":
+                obj = LeftRight(col*BLOCK, row*BLOCK+BLOCK//2, BLOCK, BLOCK//2, r"images\slime.png", 1)
+                enemies.add(obj)
+
+            elif lvl[row][col] == "e":
+                obj = Fly(col*BLOCK, row*BLOCK+BLOCK//2, BLOCK, BLOCK//2, r"images\enemy_1.png", 2)
+                enemies.add(obj)
 
 
 create_level(map_1)
@@ -253,11 +336,13 @@ while game:
         flags.draw(window)
         LR_platforms.draw(window)
         UD_platforms.draw(window)
+        enemies.draw(window)
 
         player.update()
         flags.update()
         LR_platforms.update()
         UD_platforms.update()
+        enemies.update()
 
     clock.tick(FPS)
     pygame.display.update()
