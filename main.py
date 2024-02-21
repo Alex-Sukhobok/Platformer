@@ -13,9 +13,30 @@ WIN_WIDTH = BLOCK * 35
 WIN_HEIGHT = BLOCK * 20
 FPS = 40
 BG = (0, 0, 0)
+GREEN = (5, 109, 0)
+RED = (114, 0, 0)
+WHITE = (255, 255, 255)
+
 
 window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 clock = pygame.time.Clock()
+
+rect_menue = pygame.Rect(0, 0, WIN_WIDTH//2, WIN_HEIGHT//2)
+rect_menue.center = (WIN_WIDTH//2, WIN_HEIGHT//2)
+
+font = pygame.font.SysFont("Arial", 50)
+txt_win = font.render("You win!", True, WHITE)
+txt_win_rect = txt_win.get_rect(center = (WIN_WIDTH//2, WIN_HEIGHT//2-70))
+
+txt_lose = font.render("You lose(", True, WHITE)
+txt_lose_rect = txt_lose.get_rect(center = (WIN_WIDTH//2, WIN_HEIGHT//2-70))
+
+class Button():
+    def __init__(self, x, y, text, color1, color2):
+        self.rect = pygame.Rect(x, y, WIN_WIDTH//200*35, 20)
+        self.color = color1
+        self.color_deactive = color1
+        self.color_active = color2
 
 class GameSprite(pygame.sprite.Sprite):
     def __init__ (self, x, y, width, height, picture):
@@ -79,6 +100,7 @@ class Flag(GameSprite):
         self.timer = 15
         self.images = [self.image, self.image2]
         self.pic_num = 0
+        self.available = False
         
     def update(self):
         self.timer -= 1
@@ -260,24 +282,24 @@ class Player(GameSprite):
 
 map_1 = [
     "                  1                ",
-    "                                   ",
-    "                                   ",
-    "             q                     ",
-    "        00000000                   ",
+    "                         000       ",
+    "                      3            ",
+    "             q      000000         ",
+    "        00000000           888     ",
     "                                   ",
     "                                   ",
     "   99                              ",
-    "                                   ",
     "             2                     ",
-    "       666   0000                  ",
-    "                      777          ",
+    "             0000           000    ",
+    "       666                         ",
+    "                     7777          ",
     "                                   ",
     "                               888 ",
     "                                   ",
-    "                            4      ",
-    "                        t 000      ",
-    "        777            666         ",
-    "     02222222000     t33        q  ",
+    "                            t      ",
+    "                       5  000      ",
+    "        777    4       66          ",
+    "     02222222220      33       q   ",
     "00000000000000000000000000000000000"
 ]
 
@@ -381,13 +403,15 @@ def create_level(lvl):
                 obj = Trumpline(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\jump 1.png")
                 tramplines.add(obj)
 
+    if not stars.sprites():
+        flags.sprites()[0].available = True
 
 create_level(map_1)
 
 
 
 game = True
-level = 1
+level = "lose"
 while game:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -401,14 +425,12 @@ while game:
         lava.draw(window)
         spikes.draw(window)
         stars.draw(window)
-        flags.draw(window)
         LR_platforms.draw(window)
         UD_platforms.draw(window)
         enemies.draw(window)
         tramplines.draw(window)
 
         player.update()
-        flags.update()
         LR_platforms.update()
         UD_platforms.update()
         enemies.update()
@@ -416,12 +438,29 @@ while game:
         spikes.update()
         tramplines.update()
 
+        st_pl = pygame.sprite.groupcollide(stars, player, True, False)
+        if st_pl:
+            if not stars.sprites():
+                flags.sprites()[0].available = True
+
+        if flags.sprites()[0].available:
+            flags.draw(window)
+            flags.update()
+
         pl_tr = pygame.sprite.groupcollide(player, tramplines, False, False)
         if pl_tr:
             for pl in pl_tr:
-                pl.gravity = -20
+                pl.gravity = -15
                 pl.jumped = True
                 pl_tr[pl][0].activate_tr()
+    
+    elif level == "win":
+        pygame.draw.rect(window, GREEN, rect_menue)
+        window.blit(txt_win, txt_win_rect)
+
+    elif level == "lose":
+        pygame.draw.rect(window, RED, rect_menue)
+        window.blit(txt_lose, txt_lose_rect)
 
     clock.tick(FPS)
     pygame.display.update()
