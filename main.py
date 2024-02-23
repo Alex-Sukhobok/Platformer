@@ -16,6 +16,10 @@ BG = (0, 0, 0)
 GREEN = (5, 109, 0)
 RED = (114, 0, 0)
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+YELLOW = (178, 183, 27)
+ORANGE = (204, 138, 25)
+
 
 
 window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
@@ -33,10 +37,27 @@ txt_lose_rect = txt_lose.get_rect(center = (WIN_WIDTH//2, WIN_HEIGHT//2-70))
 
 class Button():
     def __init__(self, x, y, text, color1, color2):
-        self.rect = pygame.Rect(x, y, WIN_WIDTH//200*35, 20)
+        self.rect = pygame.Rect(x, y, WIN_WIDTH//200*35, 50)
         self.color = color1
         self.color_deactive = color1
         self.color_active = color2
+        self.text = pygame.font.SysFont("Arial", 30).render(text, True, WHITE)
+        self.text_rect = self.text.get_rect(center = self.rect.center)
+
+    def show(self):
+        pygame.draw.rect(window, self.color, self.rect)
+        window.blit(self.text, self.text_rect)
+
+    def active(self):
+        self.color = self.color_active
+
+    def deactive(self):
+        self.color = self.color_deactive
+
+btn_next = Button(rect_menue.x+rect_menue.width//10, rect_menue.centery+30, "Next Level", BLACK, GREEN)
+btn_exit = Button(rect_menue.x+rect_menue.width*55//100, rect_menue.centery+30, "Exit", BLACK, ORANGE)
+btn_restart = Button(rect_menue.x+rect_menue.width//10, rect_menue.centery+30, "Restart", BLACK, YELLOW)
+
 
 class GameSprite(pygame.sprite.Sprite):
     def __init__ (self, x, y, width, height, picture):
@@ -411,11 +432,39 @@ create_level(map_1)
 
 
 game = True
-level = "lose"
+level = "win"
 while game:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             game = False
+        if isinstance(level, str):
+            mouse_pos = pygame.mouse.get_pos()
+            if btn_exit.rect.collidepoint(mouse_pos):
+                btn_exit.active()
+            else:
+                btn_exit.deactive()
+
+            if level == "win":
+                if btn_next.rect.collidepoint(mouse_pos):
+                    btn_next.active()
+                else:
+                    btn_next.deactive()
+
+            elif level == "lose":
+                if btn_restart.rect.collidepoint(mouse_pos):
+                    btn_restart.active()
+                else:
+                    btn_restart.deactive()
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if btn_exit.rect.collidepoint(mouse_pos):
+                        game = False
+                    elif level == "win" and btn_next.rect.collidepoint(mouse_pos):
+                        print("next lvl")
+                    elif level == "lose" and btn_restart.rect.collidepoint(mouse_pos):
+                        print("restart lvl")
+                        
 
     if level == 1:
         window.fill(BG)
@@ -457,10 +506,14 @@ while game:
     elif level == "win":
         pygame.draw.rect(window, GREEN, rect_menue)
         window.blit(txt_win, txt_win_rect)
+        btn_next.show()
+        btn_exit.show()
 
     elif level == "lose":
         pygame.draw.rect(window, RED, rect_menue)
         window.blit(txt_lose, txt_lose_rect)
+        btn_restart.show()
+        btn_exit.show()
 
     clock.tick(FPS)
     pygame.display.update()
