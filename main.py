@@ -429,10 +429,10 @@ def create_level(lvl):
 
 create_level(map_1)
 
-
+  
 
 game = True
-level = "win"
+level = 1
 while game:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -463,7 +463,8 @@ while game:
                     elif level == "win" and btn_next.rect.collidepoint(mouse_pos):
                         print("next lvl")
                     elif level == "lose" and btn_restart.rect.collidepoint(mouse_pos):
-                        print("restart lvl")
+                        level = 1
+                        create_level(map_1)                       
                         
 
     if level == 1:
@@ -502,12 +503,20 @@ while game:
                 pl.gravity = -15
                 pl.jumped = True
                 pl_tr[pl][0].activate_tr()
+
+        if pygame.sprite.groupcollide(player, flags, False, False):
+            level = "win"
+
+        if pygame.sprite.groupcollide(player, lava, False, False) \
+            or pygame.sprite.groupcollide(player, spikes, False, False) \
+            or  pygame.sprite.groupcollide(player, enemies,False, False):
+                level = "lose"
     
     elif level == "win":
         pygame.draw.rect(window, GREEN, rect_menue)
         window.blit(txt_win, txt_win_rect)
         btn_next.show()
-        btn_exit.show()
+        btn_exit.show() 
 
     elif level == "lose":
         pygame.draw.rect(window, RED, rect_menue)
