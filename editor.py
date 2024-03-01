@@ -34,27 +34,65 @@ def mash():
     for i in range(COL+1):
         pygame.draw.line(window, WHITE, (i*BLOCK, 0), (i*BLOCK, WIN_HEIGHT))
     for i in range(ROW+1):
-        pass
+        pygame.draw.line(window, WHITE, (0, i*BLOCK), (GAME_WIDTH, i*BLOCK))
 
 class Button():
-    def __init__(self, x, y, text, color1, color2):
-        self.rect = pygame.Rect(x, y, WIN_WIDTH//200*35, 50)
-        self.color = color1
-        self.color_deactive = color1
-        self.color_active = color2
-        self.text = pygame.font.SysFont("Arial", 30).render(text, True, WHITE)
-        self.text_rect = self.text.get_rect(center = self.rect.center)
+    def __init__(self, x, y, image, symbol):
+        self.rect = pygame.Rect(x, y, BLOCK, BLOCK)
+        self.image = pygame.image.load(file_path(image))
+        self.image = pygame.transform.scale(self.image, (BLOCK, BLOCK))
+        self.symbol = symbol
+        self.active = False
 
     def show(self):
-        pygame.draw.rect(window, self.color, self.rect)
-        window.blit(self.text, self.text_rect)
+        window.blit(self.image, self.rect)
+        if self.active:
+            pygame.draw.rect(window, RED, self.rect, 3)
+        
+objects_dict = {
+    "0" : r"images\ground 1.png",
+    "1" : r"images\I 1.png",
+    "2" : r"images\lava.png",
+    "3" : r"images\spikes.png",
+    "4" : r"images\star.png",
+    "5" : r"images\flag.png",
+    "6" : r"images\ground 3.png",
+    "7" : r"images\move_platform.png",
+    "8" : r"images\vmove_platform.png",
+    "9" : r"images\vmove2_pltfr.png",
+    "q" : r"images\slime.png",
+    "r" : r"images\enemy_1.png",
+    "t" : r"images\jump 1.png"
 
-    def active(self):
-        self.color = self.color_active
+}
 
-    def deactive(self):
-        self.color = self.color_deactive
+button_list = []
 
+x = 20
+y = 20
+num_btn = 0
+for key, value in objects_dict.items():
+    button = Button(GAME_WIDTH+x, y, value, key)
+    x += BLOCK + 15
+    button_list.append(button)
+    num_btn += 1
+    if num_btn == 5:
+        y += BLOCK + 10
+        x = 20
+        num_btn = 0
+
+'''
+btn_col, btn_row = 1, 1
+for key, value in objects_dict.items():
+    button = Button(GAME_WIDTH+BLOCK*btn_col*1.2, BLOCK*btn_row*1.3, value, key)
+    button_list.append(button)
+    btn_col += 1
+    if btn_col == 6:
+        btn_col = 1
+        btn_row += 1
+'''
+
+new_map = [" "*COL for i in range(ROW)]
 
 
 class GameSprite(pygame.sprite.Sprite):
@@ -111,17 +149,8 @@ t - trampline
 
 
 
-def create_level(lvl):
-    platforms.empty()
-    player.empty()
-    lava.empty()
-    spikes.empty()
-    stars.empty()
-    flags.empty()
-    LR_platforms.empty()
-    UD_platforms.empty()
-    enemies.empty()
-    tramplines.empty()
+def show_level(lvl):
+    
 
     
     for row in range(len(lvl)):
@@ -195,7 +224,10 @@ while game:
 
     window.fill(BG)
     pygame.draw.rect(window, GREY, editor_rect)
-    mash()    
+    mash()
+    for btn in button_list:
+        btn.show()
+
     clock.tick(FPS)
     pygame.display.update()
 
