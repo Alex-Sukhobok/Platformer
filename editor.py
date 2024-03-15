@@ -8,6 +8,12 @@ def file_path(file_name):
     path = os.path.join(folder, file_name)
     return path
 
+def level_path(file_name):
+    folder = os.path.abspath(__file__ + "/..")
+    path = os.path.join(folder, "levels", file_name)
+    return path
+
+
 BLOCK = 30
 ROW = 20
 COL = 35
@@ -23,6 +29,7 @@ BLACK = (0, 0, 0)
 YELLOW = (178, 183, 27)
 ORANGE = (204, 138, 25)
 GREY = (71, 71, 71)
+LIGHT_GREEN = (160, 255, 160)
 
 
 
@@ -48,7 +55,58 @@ class Button():
         window.blit(self.image, self.rect)
         if self.active:
             pygame.draw.rect(window, RED, self.rect, 3)
-        
+
+
+class ButtonMenue():
+    def __init__(self, x, y, width, height, text):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.text_light = pygame.font.SysFont("Arial", 25).render(text, True, BLACK)
+        self.text_light_rect = self.text_light.get_rect(center=self.rect.center)
+        self.text_bold = pygame.font.SysFont("Arial", 28, True).render(text, True, BLACK)
+        self.text_bold_rect = self.text_bold.get_rect(center=self.rect.center)
+        self.text = self.text_light
+        self.text_rect = self.text_light_rect
+
+    def show(self):
+        pygame.draw.rect(window, WHITE, self.rect)
+        window.blit(self.text, self.text_rect)
+
+    def active(self):
+        self.text = self.text_bold
+        self.text_rect = self.text_bold_rect
+    
+    def deactive(self):
+        self.text = self.text_light
+        self.text_rect = self.text_light_rect
+
+
+class CurrentTxtLvl():
+    def __init__ (self, x, y, text):
+        self.center = (x, y)
+        self.change_text(text)
+
+    def show (self):
+        window.blit(self.text, self.text_rect)
+
+    def change_text(self, text):
+        self.text = pygame.font.SysFont("Arial", 30, True).render(text, True, LIGHT_GREEN)
+        self.text_rect = self.text.get_rect(center=self.center)
+
+    
+
+
+
+
+txt_current_lvl = CurrentTxtLvl(GAME_WIDTH+120, 260, "1.txt")
+new_button = ButtonMenue(GAME_WIDTH+30, 300, 180, 40, "New Level")
+left_button = ButtonMenue(GAME_WIDTH+30, 360, 80, 40, "<")
+right_button = ButtonMenue(GAME_WIDTH+130, 360, 80, 40, ">")
+save_button = ButtonMenue(GAME_WIDTH+30, 420, 180, 40, "Save Level")
+
+menue_btn_tuple = (new_button, left_button, right_button, save_button)
+
+
+
 objects_dict = {
     "0" : r"images\ground 1.png",
     "1" : r"images\I 1.png",
@@ -93,6 +151,8 @@ for key, value in objects_dict.items():
 '''
 
 new_map = [" "*COL for i in range(ROW)]
+
+
 
 
 class GameSprite(pygame.sprite.Sprite):
@@ -145,88 +205,133 @@ map_1 = [
 q - enemy LR one point
 r - enemy LR two point
 t - trampline
+'''
 
+def show_pic(x, y, image):
+    picture = pygame.image.load(file_path(image))
+    picture = pygame.transform.scale(picture, (BLOCK, BLOCK))
+    window.blit(picture, (x, y))
 
-
-
-def show_level(lvl):
+def show_level():
     
+    for row in range(len(new_map)):
+        for col in range(len(new_map[row])):
+            if new_map[row][col] == "0":
+                show_pic(col*BLOCK, row*BLOCK, r"images\ground 1.png")
 
+            elif new_map[row][col] == "1":
+                show_pic(col*BLOCK, row*BLOCK, r"images\I 1.png")
+            
+            elif new_map[row][col] == "2":
+                show_pic(col*BLOCK, row*BLOCK, r"images\lava.png")
+            
+            elif new_map[row][col] == "3":
+                show_pic(col*BLOCK, row*BLOCK, r"images\spikes.png")
+
+            elif new_map[row][col] == "4":
+                show_pic(col*BLOCK, row*BLOCK, r"images\star.png")
+
+            elif new_map[row][col] == "5":
+                show_pic(col*BLOCK, row*BLOCK, r"images\flag.png")
+            
+            elif new_map[row][col] == "6":
+                show_pic(col*BLOCK, row*BLOCK, r"images\ground 3.png")
+                
+            elif new_map[row][col] == "7":
+                show_pic(col*BLOCK, row*BLOCK, r"images\move_platform.png")
     
-    for row in range(len(lvl)):
-        for col in range(len(lvl[row])):
-            if lvl[row][col] == "0":
-                obj = GameSprite(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\ground 1.png")
-                platforms.add(obj)
-                blocks.add(obj)
+            elif new_map[row][col] == "8":
+                show_pic(col*BLOCK, row*BLOCK, r"images\vmove_platform.png")
 
-            elif lvl[row][col] == "1":
-                obj = Player(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\I 1.png")
-                player.add(obj)
+            elif new_map[row][col] == "9":
+                show_pic(col*BLOCK, row*BLOCK, r"images\vmove2_pltfr.png")
+            
+            elif new_map[row][col] == "q":
+                show_pic(col*BLOCK, row*BLOCK, r"images\slime.png")
 
-            elif lvl[row][col] == "2":
-                obj = Lava(col*BLOCK, row*BLOCK+5, BLOCK, BLOCK-5, r"images\lava.png")
-                lava.add(obj)
+            elif new_map[row][col] == "e":
+                show_pic(col*BLOCK, row*BLOCK, r"images\enemy_1.png")
 
-            elif lvl[row][col] == "3":
-                obj = Spikes(col*BLOCK, row*BLOCK+5, BLOCK, BLOCK-5, r"images\spikes.png")
-                spikes.add(obj)
+            elif new_map[row][col] == "t":
+                show_pic(col*BLOCK, row*BLOCK, r"images\jump 1.png")
 
-            elif lvl[row][col] == "4":
-                obj = GameSprite(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\star.png")
-                stars.add(obj)
-
-            elif lvl[row][col] == "5":
-                obj = Flag(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\flag.png")
-                flags.add(obj)
-
-            elif lvl[row][col] == "6":
-                obj = LeftRight(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\ground 3.png", 1)
-                LR_platforms.add(obj)
-                blocks.add(obj)
-
-            elif lvl[row][col] == "7":
-                obj = LeftRight(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\move_platform.png", 2)
-                LR_platforms.add(obj)
-                blocks.add(obj)
-
-            elif lvl[row][col] == "8":
-                obj = UpDown(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\vmove_platform.png", 1)
-                UD_platforms.add(obj)
-                blocks.add(obj)
-
-            elif lvl[row][col] == "9":
-                obj = UpDown(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\vmove2_pltfr.png", 2)
-                UD_platforms.add(obj)
-                blocks.add(obj)
-
-            elif lvl[row][col] == "q":
-                obj = LeftRight(col*BLOCK, row*BLOCK+BLOCK//2, BLOCK, BLOCK//2, r"images\slime.png", 1)
-                enemies.add(obj)
-
-            elif lvl[row][col] == "e":
-                obj = Fly(col*BLOCK, row*BLOCK+BLOCK//2, BLOCK, BLOCK//2, r"images\enemy_1.png", 2)
-                enemies.add(obj)
-
-            elif lvl[row][col] == "t":
-                obj = Trumpline(col*BLOCK, row*BLOCK, BLOCK, BLOCK, r"images\jump 1.png")
-                tramplines.add(obj)
-
-    if not stars.sprites():
-        flags.sprites()[0].available = True
-'''  
+active_button = None
 
 game = True
 while game:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             game = False
+        if event.type == pygame.MOUSEMOTION:
+            cursor = event.pos
+            for btn in menue_btn_tuple:
+                if btn.rect.collidepoint(cursor):
+                    btn.active()
+                else:
+                    btn.deactive()
+
+
+
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            cursor = event.pos
+            x = cursor[0]//BLOCK
+            y = cursor[1]//BLOCK
+            
+            if event.button == 1:
+                if cursor[0] <= GAME_WIDTH and active_button:
+                    new_map[y] = new_map[y][:x] + active_button.symbol + new_map[y][x+1:]
+            
+                else:
+                    for obj in button_list:
+                        if obj.rect.collidepoint(cursor):
+                            obj.active = True
+                            if active_button:
+                                active_button.active = False
+                            active_button = obj
+                        
+                    if new_button.rect.collidepoint(cursor):
+                        print("New Level")
+                    elif left_button.rect.collidepoint(cursor):
+                        print("Left tap")
+                    elif right_button.rect.collidepoint(cursor):
+                        print("right tap")
+                    elif save_button.rect.collidepoint(cursor):
+                        list_of_lvls = os.listdir(file_path("levels"))
+                        levls_num = [int(num.replace(".txt", "")) for num in list_of_lvls]
+                        curent_lvl = 1
+                        while True:
+                            if curent_lvl in levls_num:
+                                curent_lvl += 1
+                            else:
+                                break
+                        curent_lvl = str(curent_lvl) + ".txt"
+
+                        
+                        path = level_path(curent_lvl)
+                        with open(path, "w", encoding="utf-8") as levels_txt:
+                            for row in new_map:
+                                levels_txt.write(row + "\n")
+                        
+                            
+
+            elif event.button == 3:
+                if cursor[0] <= GAME_WIDTH:
+                    new_map[y] = new_map[y][:x] + " " + new_map[y][x+1:]
+                
 
     window.fill(BG)
     pygame.draw.rect(window, GREY, editor_rect)
+    show_level()
     mash()
     for btn in button_list:
         btn.show()
+
+    new_button.show()
+    left_button.show()
+    right_button.show()
+    save_button.show()
+    txt_current_lvl.show()
+
 
     clock.tick(FPS)
     pygame.display.update()
