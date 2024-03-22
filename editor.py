@@ -8,9 +8,9 @@ def file_path(file_name):
     path = os.path.join(folder, file_name)
     return path
 
-def level_path(file_name):
+def level_path(number):
     folder = os.path.abspath(__file__ + "/..")
-    path = os.path.join(folder, "levels", file_name)
+    path = os.path.join(folder, "levels", str(number) + ".txt")
     return path
 
 
@@ -36,6 +36,9 @@ LIGHT_GREEN = (160, 255, 160)
 window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 clock = pygame.time.Clock()
 editor_rect = pygame.Rect(GAME_WIDTH, 0, BLOCK*8, WIN_HEIGHT)
+
+
+
 
 def mash():
     for i in range(COL+1):
@@ -81,29 +84,93 @@ class ButtonMenue():
 
 
 class CurrentTxtLvl():
-    def __init__ (self, x, y, text):
+    def __init__ (self, x, y, number):
         self.center = (x, y)
-        self.change_text(text)
+        self.change_text(number)
 
     def show (self):
         window.blit(self.text, self.text_rect)
 
-    def change_text(self, text):
+    def change_text(self, number):
+        text = str(number) + ".txt"
         self.text = pygame.font.SysFont("Arial", 30, True).render(text, True, LIGHT_GREEN)
         self.text_rect = self.text.get_rect(center=self.center)
 
-    
+
+class Level():
+    def __init__(self):
+        self.lvl_list = list()                  # список з з файлів "txt"
+        self.num_lvl_list = list()              # список з номерів рівнів
+        self.index_lvl = 0                      # порядковий індекс рівня у списку
+        self.cur_lvl = None                     # номер рівня
+        self.cut_txt_lvl = None                 # напис рівня на екрані
+        self.lvl_map = list()                   # мапа рівня (список рядків)
+        self.get_info(False)
+
+    def get_info(self, saty_cur=True):
+        self.lvl_list = os.listdir(file_path("levels"))
+        if self.lvl_list:
+            self.num_lvl_list = [int(num.replace(".txt", "")) for num in self.lvl_list]
+            self.num_lvl_list.sort()    
+            if saty_cur:
+                self.index_lvl = self.num_lvl_list.index(self.cur_lvl)
+            else:
+                self.cur_lvl = self.num_lvl_list[self.index_lvl]
+                self.cut_txt_lvl = CurrentTxtLvl(GAME_WIDTH+120, 260, self.cur_lvl)        
+                self.load_lvl()       
+        else:
+            self.num_lvl_list = []
+            self.cur_lvl = 1
+            self.cut_txt_lvl = CurrentTxtLvl(GAME_WIDTH+120, 260, 1)
+            self.lvl_map = [" "*COL for i in range(ROW)]
+        
+    def load_lvl(self):
+        path = level_path(self.cur_lvl)
+        with open(path, encoding="utf-8") as file:
+            self.lvl_map = file.read()            
+            self.lvl_map = self.lvl_map.split("\n")
+            self.lvl_map.pop(-1)
+
+    def save_new_lvl(self):
+        self.cur_lvl = 1
+        while True:
+            if self.cur_lvl in self.num_lvl_list:
+                self.cur_lvl += 1
+            else:
+                break
+
+        self.save_cur_lvl()
+        self.get_info()
+
+
+    def save_cur_lvl(self):
+        path = level_path(self.cur_lvl)
+        with open(path, "w", encoding="utf-8") as levels_txt:
+            for row in self.lvl_map:
+                levels_txt.write(row + "\n")
+        
+
+
+
+level = Level()
+
+
+
+  
 
 
 
 
-txt_current_lvl = CurrentTxtLvl(GAME_WIDTH+120, 260, "1.txt")
+
+
 new_button = ButtonMenue(GAME_WIDTH+30, 300, 180, 40, "New Level")
 left_button = ButtonMenue(GAME_WIDTH+30, 360, 80, 40, "<")
 right_button = ButtonMenue(GAME_WIDTH+130, 360, 80, 40, ">")
-save_button = ButtonMenue(GAME_WIDTH+30, 420, 180, 40, "Save Level")
+save_new_button = ButtonMenue(GAME_WIDTH+30, 420, 180, 40, "Save as new")
+save_as_cur_button = ButtonMenue(GAME_WIDTH+30, 480, 180, 40, "Save as curent")
 
-menue_btn_tuple = (new_button, left_button, right_button, save_button)
+
+menue_btn_tuple = (new_button, left_button, right_button, save_new_button, save_as_cur_button)
 
 
 
@@ -150,7 +217,7 @@ for key, value in objects_dict.items():
         btn_row += 1
 '''
 
-new_map = [" "*COL for i in range(ROW)]
+
 
 
 
@@ -167,7 +234,7 @@ class GameSprite(pygame.sprite.Sprite):
 
 
 
-
+'''
 map_1 = [
     "                  1                ",
     "                         000       ",
@@ -190,6 +257,7 @@ map_1 = [
     "     02222222220      33       q   ",
     "00000000000000000000000000000000000"
 ]
+'''
 
 '''
 0 - platform
@@ -212,7 +280,7 @@ def show_pic(x, y, image):
     picture = pygame.transform.scale(picture, (BLOCK, BLOCK))
     window.blit(picture, (x, y))
 
-def show_level():
+def show_level(new_map):
     
     for row in range(len(new_map)):
         for col in range(len(new_map[row])):
@@ -249,11 +317,13 @@ def show_level():
             elif new_map[row][col] == "q":
                 show_pic(col*BLOCK, row*BLOCK, r"images\slime.png")
 
-            elif new_map[row][col] == "e":
+            elif new_map[row][col] == "r":
                 show_pic(col*BLOCK, row*BLOCK, r"images\enemy_1.png")
 
             elif new_map[row][col] == "t":
                 show_pic(col*BLOCK, row*BLOCK, r"images\jump 1.png")
+
+
 
 active_button = None
 
@@ -279,7 +349,7 @@ while game:
             
             if event.button == 1:
                 if cursor[0] <= GAME_WIDTH and active_button:
-                    new_map[y] = new_map[y][:x] + active_button.symbol + new_map[y][x+1:]
+                    level.lvl_map[y] = level.lvl_map[y][:x] + active_button.symbol + level.lvl_map[y][x+1:]
             
                 else:
                     for obj in button_list:
@@ -295,42 +365,28 @@ while game:
                         print("Left tap")
                     elif right_button.rect.collidepoint(cursor):
                         print("right tap")
-                    elif save_button.rect.collidepoint(cursor):
-                        list_of_lvls = os.listdir(file_path("levels"))
-                        levls_num = [int(num.replace(".txt", "")) for num in list_of_lvls]
-                        curent_lvl = 1
-                        while True:
-                            if curent_lvl in levls_num:
-                                curent_lvl += 1
-                            else:
-                                break
-                        curent_lvl = str(curent_lvl) + ".txt"
-
-                        
-                        path = level_path(curent_lvl)
-                        with open(path, "w", encoding="utf-8") as levels_txt:
-                            for row in new_map:
-                                levels_txt.write(row + "\n")
+                    elif save_new_button.rect.collidepoint(cursor):
+                        level.save_new_lvl()
+                    elif save_as_cur_button.rect.collidepoint(cursor):
+                        level.save_cur_lvl()
                         
                             
 
             elif event.button == 3:
                 if cursor[0] <= GAME_WIDTH:
-                    new_map[y] = new_map[y][:x] + " " + new_map[y][x+1:]
+                    level.lvl_map[y] = level.lvl_map[y][:x] + " " + level.lvl_map[y][x+1:]
                 
 
     window.fill(BG)
     pygame.draw.rect(window, GREY, editor_rect)
-    show_level()
+    show_level(level.lvl_map)
     mash()
     for btn in button_list:
         btn.show()
 
-    new_button.show()
-    left_button.show()
-    right_button.show()
-    save_button.show()
-    txt_current_lvl.show()
+    for btn in menue_btn_tuple:
+        btn.show()
+    level.cut_txt_lvl.show()
 
 
     clock.tick(FPS)

@@ -416,7 +416,7 @@ def create_level(lvl):
                 obj = LeftRight(col*BLOCK, row*BLOCK+BLOCK//2, BLOCK, BLOCK//2, r"images\slime.png", 1)
                 enemies.add(obj)
 
-            elif lvl[row][col] == "e":
+            elif lvl[row][col] == "r":
                 obj = Fly(col*BLOCK, row*BLOCK+BLOCK//2, BLOCK, BLOCK//2, r"images\enemy_1.png", 2)
                 enemies.add(obj)
 
