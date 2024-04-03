@@ -3,9 +3,16 @@ import pygame
 import os
 pygame.init()
 
+
+
 def file_path(file_name):
     folder = os.path.abspath(__file__ + "/..")
     path = os.path.join(folder, file_name)
+    return path
+
+def level_path(number):
+    folder = os.path.abspath(__file__ + "/..")
+    path = os.path.join(folder, "levels", str(number) + ".txt")
     return path
 
 BLOCK = 30
@@ -21,6 +28,32 @@ YELLOW = (178, 183, 27)
 ORANGE = (204, 138, 25)
 
 
+class Levels():
+    def __init__(self):
+        self.lvl_list = os.listdir(file_path("levels")) 
+        self.lvl_list = [int(num.replace(".txt", "")) for num in self.lvl_list]
+        self.lvl_list.sort()
+
+        self.index = 0
+        self.load_lvl()
+
+    def load_lvl(self):
+        self.lvl_path = level_path(self.lvl_list[self.index])
+        with open(self.lvl_path, encoding="utf-8") as file:
+            self.lvl_map = file.read()            
+            self.lvl_map = self.lvl_map.split("\n")
+            self.lvl_map.pop(-1)
+
+    def next_lvl(self):
+        self.index += 1
+        if self.index == len(self.lvl_list):
+            return False
+        else:
+            self.load_lvl()
+            return True
+
+levels = Levels()
+
 
 window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 clock = pygame.time.Clock()
@@ -34,6 +67,10 @@ txt_win_rect = txt_win.get_rect(center = (WIN_WIDTH//2, WIN_HEIGHT//2-70))
 
 txt_lose = font.render("You lose(", True, WHITE)
 txt_lose_rect = txt_lose.get_rect(center = (WIN_WIDTH//2, WIN_HEIGHT//2-70))
+
+font_finish = pygame.font.SysFont("Arial", 100, True)
+txt_complete_game = font_finish.render("You finish the game!", True, BLACK)
+txt_complete_game_rect = txt_complete_game.get_rect(center = (WIN_WIDTH//2, WIN_HEIGHT//2))
 
 class Button():
     def __init__(self, x, y, text, color1, color2):
@@ -354,6 +391,7 @@ tramplines = pygame.sprite.Group()
 
 def create_level(lvl):
     platforms.empty()
+    blocks.empty()
     player.empty()
     lava.empty()
     spikes.empty()
@@ -427,9 +465,10 @@ def create_level(lvl):
     if not stars.sprites():
         flags.sprites()[0].available = True
 
-create_level(map_1)
+create_level(levels.lvl_map)
 
-  
+
+
 
 game = True
 level = 1
@@ -458,13 +497,17 @@ while game:
             
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    if btn_exit.rect.collidepoint(mouse_pos):
+                    if btn_exit.rect.collidepoint(mouse_pos) and level in ("win", "lose"):
                         game = False
                     elif level == "win" and btn_next.rect.collidepoint(mouse_pos):
-                        print("next lvl")
+                        if levels.next_lvl():
+                            create_level(levels.lvl_map)
+                            level = 1
+                        else:
+                            level = "complete"
                     elif level == "lose" and btn_restart.rect.collidepoint(mouse_pos):
                         level = 1
-                        create_level(map_1)                       
+                        create_level(levels.lvl_map)                       
                         
 
     if level == 1:
@@ -509,6 +552,7 @@ while game:
 
         if pygame.sprite.groupcollide(player, lava, False, False) \
             or pygame.sprite.groupcollide(player, spikes, False, False) \
+            or player.sprites()[0].rect.top >= WIN_HEIGHT \
             or  pygame.sprite.groupcollide(player, enemies,False, False):
                 level = "lose"
     
@@ -523,6 +567,10 @@ while game:
         window.blit(txt_lose, txt_lose_rect)
         btn_restart.show()
         btn_exit.show()
+
+    elif level == "complete":
+        window.fill((152, 132, 30))
+        window.blit(txt_complete_game, txt_complete_game_rect)
 
     clock.tick(FPS)
     pygame.display.update()

@@ -31,6 +31,7 @@ ORANGE = (204, 138, 25)
 GREY = (71, 71, 71)
 LIGHT_GREEN = (160, 255, 160)
 
+# створення нового рівня 
 
 
 window = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
@@ -114,6 +115,7 @@ class Level():
             self.num_lvl_list.sort()    
             if saty_cur:
                 self.index_lvl = self.num_lvl_list.index(self.cur_lvl)
+                self.cut_txt_lvl.change_text(self.cur_lvl)
             else:
                 self.cur_lvl = self.num_lvl_list[self.index_lvl]
                 self.cut_txt_lvl = CurrentTxtLvl(GAME_WIDTH+120, 260, self.cur_lvl)        
@@ -149,7 +151,22 @@ class Level():
             for row in self.lvl_map:
                 levels_txt.write(row + "\n")
         
+    def next_lvl(self):
+        if self.index_lvl + 1 < len(self.num_lvl_list):
+            self.index_lvl += 1
+            self.cur_lvl = self.num_lvl_list[self.index_lvl]
+            self.cut_txt_lvl.change_text(self.cur_lvl)
+            self.load_lvl()
 
+    def previous_lvl(self):
+        if self.index_lvl > 0:
+            self.index_lvl -= 1
+            self.cur_lvl = self.num_lvl_list[self.index_lvl]
+            self.cut_txt_lvl.change_text(self.cur_lvl)
+            self.load_lvl()
+            
+    def show_clear_lvl(self):
+        self.lvl_map = [" "*COL for i in range(ROW)]
 
 
 level = Level()
@@ -360,11 +377,11 @@ while game:
                             active_button = obj
                         
                     if new_button.rect.collidepoint(cursor):
-                        print("New Level")
+                        level.show_clear_lvl()
                     elif left_button.rect.collidepoint(cursor):
-                        print("Left tap")
+                        level.previous_lvl()
                     elif right_button.rect.collidepoint(cursor):
-                        print("right tap")
+                        level.next_lvl()
                     elif save_new_button.rect.collidepoint(cursor):
                         level.save_new_lvl()
                     elif save_as_cur_button.rect.collidepoint(cursor):
